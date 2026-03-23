@@ -23,7 +23,9 @@ class Flashcard(Base):
     definition = Column(Text)
     mnemonic = Column(Text)
     source = Column(String, default="manual")
-
+    category = Column(String, default="Ogólne", index=True)
+    proficiency = Column(Integer, default=0)
+    
     owner = relationship("User", back_populates="flashcards")
     srs_data = relationship("SRSProgress", back_populates="flashcard", uselist=False, cascade="all, delete-orphan")
 

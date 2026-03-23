@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnemo AI v3 - Testy i Statystyki</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .category-acc-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .category-acc-active .category-acc-content { max-height: 15000px; transition: max-height 0.5s ease-in; }
+        .rotate-icon { transition: transform 0.3s; }
+        .category-acc-active .rotate-icon { transform: rotate(180deg); }
+        
+        /* CSS DLA KARUZELI 3D */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+    <header class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-50">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-blue-400">🧠 Mnemo AI <span class="text-xs text-gray-500">v3</span></h1>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-full font-semibold text-sm">+ Dodaj Słówka</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 max-w-[1600px] mx-auto w-full p-6 gap-6">
+        
+        <aside class="w-64 space-y-4 sticky top-24 self-start">
+            <div>
+                <h2 class="text-sm font-semibold text-gray-500 uppercase px-3 mb-2">Statystyki ogólne</h2>
+                <div class="px-3">
+                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>Opanowano:</span>
+                        <span id="globalStatsText">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-800 rounded-full h-2">
+                        <div id="globalStatsBar" class="bg-green-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="text-sm font-semibold text-gray-500 uppercase px-3 mt-6">Moje Grupy</h2>
+            <nav id="categoryMenu" class="space-y-1">
+                </nav>
+        </aside>
+
+        <main id="flashcardsContainer" class="flex-1 space-y-6">
+            <div class="text-center text-gray-600 py-20">Baza jest pusta. Dodaj słówka!</div>
+        </main>
+    </div>
+
+    <div id="testModal" class="fixed inset-0 bg-black/95 flex items-center justify-center z-[200] hidden flex-col">
+        
+        <div class="absolute top-6 left-6">
+            <button id="directionToggle" onclick="toggleTestDirection()" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl border border-gray-600 transition-colors shadow-lg">
+                🇬🇧 ➔ 🇵🇱
+            </button>
+        </div>
+
+        <div class="absolute top-6 right-6 flex gap-4 items-center">
+            <div class="text-gray-400 font-bold text-xl" id="testCounter">1 / 10</div>
+            <button onclick="closeTest()" class="text-gray-500 hover:text-white text-3xl leading-none">✕</button>
+        </div>
+
+        <div class="w-full max-w-xl h-96 perspective-1000 cursor-pointer group" onclick="flipTestCard()">
+            <div id="testCardInner" class="w-full h-full relative transform-style-3d shadow-2xl rounded-2xl">
+                
+                <div class="absolute inset-0 bg-gray-800 border-2 border-gray-600 rounded-2xl backface-hidden flex flex-col items-center justify-center p-8">
+                    <p id="frontHelperText" class="text-gray-400 mb-4 uppercase tracking-widest text-sm">Jak to przetłumaczysz?</p>
+                    <h2 id="testWord" class="text-5xl font-bold text-center break-words"></h2>
+                    <p class="text-gray-500 mt-8 text-sm animate-pulse">(Kliknij, aby odwrócić)</p>
+                </div>
+
+                <div class="absolute inset-0 bg-gray-900 border-2 border-gray-500 rounded-2xl backface-hidden rotate-y-180 flex flex-col items-center justify-center p-8 text-center">
+                    <h2 id="testTranslation" class="text-4xl font-bold mb-2"></h2>
+                    <p id="testDefinition" class="text-gray-400 italic mb-6">""</p>
+                    <div class="bg-gray-800 p-4 rounded-lg w-full">
+                        <span class="text-yellow-500 font-bold text-sm">Mnemonic:</span> 
+                        <p id="testMnemonic" class="text-gray-200 mt-1"></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="testControls" class="mt-10 flex gap-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <button onclick="rateCard(1)" class="bg-red-900/50 hover:bg-red-600 text-red-200 px-8 py-3 rounded-xl font-bold border border-red-700 transition-all">Trudne (Powtórz)</button>
+            <button onclick="rateCard(2)" class="bg-yellow-900/50 hover:bg-yellow-600 text-yellow-200 px-8 py-3 rounded-xl font-bold border border-yellow-700 transition-all">Średnie (+1)</button>
+            <button onclick="rateCard(3)" class="bg-green-900/50 hover:bg-green-600 text-green-200 px-8 py-3 rounded-xl font-bold border border-green-700 transition-all">Łatwe (Umiem!)</button>
+        </div>
+    </div>
+
+    <div id="addModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden p-4">
+        <div class="bg-gray-900 rounded-2xl border border-gray-800 p-8 w-full max-w-2xl shadow-2xl relative">
+            <button onclick="document.getElementById('addModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-white text-2xl">✕</button>
+            
+            <h3 class="text-xl font-bold text-blue-400 mb-6" id="modalTitle">Dodaj lub zeskanuj słówka</h3>
+            <input type="hidden" id="editCardId">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="border-r border-gray-800 pr-8 space-y-4">
+                    <h4 class="font-bold text-green-400">Pojedyncze słowo / Edycja</h4>
+                    <input type="text" id="wordInput" placeholder="Angielskie słówko" class="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white">
+                    <input type="text" id="polishInput" placeholder="Polskie tłumaczenie" class="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white hidden">
+                    <textarea id="mnemonicInput" placeholder="Mnemotechnika" class="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white hidden"></textarea>
+                    <input type="text" id="categoryInputSingle" placeholder="Kategoria" class="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white">
+                    <button onclick="saveCard()" id="saveBtn" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-lg font-bold">Zapisz</button>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="font-bold text-purple-400">Skanuj notatki (OCR)</h4>
+                    <p class="text-sm text-gray-400">Zrób zdjęcie listy słówek z zeszytu.</p>
+                    <input type="text" id="categoryInputOcr" placeholder="Nazwa grupy (np. Test 2)" class="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white">
+                    
+                    <label class="block w-full bg-gray-800 p-4 rounded-lg border-2 border-dashed border-gray-700 text-center cursor-pointer hover:border-purple-500 transition-colors">
+                        <span class="text-gray-500" id="fileNameDisplay">Wybierz zdjęcie / Otwórz aparat</span>
+                        <input type="file" id="ocrExpressInput" accept="image/*" class="hidden" onchange="handleOcrUpload()">
+                    </label>
+                    <div id="ocrStatus" class="text-xs text-gray-500 mt-2 text-center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        const USER_ID = 1;
+        let allFlashcards = [];
+        
+        // Zmienne do Testu
+        let testQueue = [];
+        let currentTestIndex = 0;
+        let isCardFlipped = false;
+        let testDirection = 'en-pl'; // NOWA ZMIENNA: Domyślnie z angielskiego na polski
+
+        // NOWA FUNKCJA: Obsługa kliknięcia w przełącznik flag
+        function toggleTestDirection() {
+            testDirection = testDirection === 'en-pl' ? 'pl-en' : 'en-pl';
+            const btn = document.getElementById('directionToggle');
+            btn.innerText = testDirection === 'en-pl' ? '🇬🇧 ➔ 🇵🇱' : '🇵🇱 ➔ 🇬🇧';
+            
+            // Jeśli karta była już odwrócona, robimy animację chowania i zmieniamy tekst
+            if (isCardFlipped) {
+                document.getElementById('testCardInner').classList.remove('rotate-y-180');
+                document.getElementById('testControls').classList.replace('opacity-100', 'opacity-0');
+                document.getElementById('testControls').classList.replace('pointer-events-auto', 'pointer-events-none');
+                isCardFlipped = false;
+                setTimeout(renderTestCard, 300); // Czekamy aż się obróci
+            } else {
+                renderTestCard();
+            }
+        }
+
+        async function loadFlashcards() {
+            const response = await fetch(`${API_URL}/flashcards/`);
+            allFlashcards = await response.json();
+            allFlashcards.reverse();
+            updateGlobalStats();
+            renderCategoryMenu();
+            renderFlashcardsGrouped();
+        }
+
+        function updateGlobalStats() {
+            if(allFlashcards.length === 0) return;
+            // Zakładamy, że proficiency = 3 to pełne opanowanie
+            const totalPoints = allFlashcards.length * 3;
+            const currentPoints = allFlashcards.reduce((sum, card) => sum + (card.proficiency || 0), 0);
+            const percentage = Math.round((currentPoints / totalPoints) * 100);
+            
+            document.getElementById('globalStatsText').innerText = `${percentage}%`;
+            document.getElementById('globalStatsBar').style.width = `${percentage}%`;
+        }
+
+        function renderCategoryMenu() {
+            const menu = document.getElementById('categoryMenu');
+            const categories = [...new Set(allFlashcards.map(c => c.category))];
+            
+            menu.innerHTML = `<button onclick="renderFlashcardsGrouped()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300">Wszystkie (${allFlashcards.length})</button>`;
+            
+            categories.forEach(cat => {
+                if(!cat) cat = "Ogólne";
+                const catCards = allFlashcards.filter(c => c.category === cat);
+                menu.innerHTML += `
+                    <button onclick="renderFlashcardsGrouped('${cat}')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-400 text-sm flex justify-between">
+                        <span>${cat}</span>
+                        <span class="text-gray-600">${catCards.length}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function renderFlashcardsGrouped(filterCategory = null) {
+            const container = document.getElementById('flashcardsContainer');
+            container.innerHTML = '';
+
+            let dataToRender = filterCategory ? allFlashcards.filter(c => c.category === filterCategory) : allFlashcards;
+            const grouped = dataToRender.reduce((acc, card) => {
+                const cat = card.category || "Ogólne";
+                if(!acc[cat]) acc[cat] = [];
+                acc[cat].push(card);
+                return acc;
+            }, {});
+
+            for (const [categoryName, cards] of Object.entries(grouped)) {
+                let cardsHtml = '';
+                cards.forEach(card => cardsHtml += generateFlashcardHtml(card));
+
+                // Obliczanie statystyk grupy
+                const groupMax = cards.length * 3;
+                const groupPoints = cards.reduce((sum, c) => sum + (c.proficiency || 0), 0);
+                const groupPercent = groupMax === 0 ? 0 : Math.round((groupPoints / groupMax) * 100);
+
+                container.innerHTML += `
+                    <div class="category-accordion ${!filterCategory ? '' : 'category-acc-active'} border border-gray-800 rounded-xl bg-gray-900/50 overflow-hidden shadow-lg mb-6">
+                        <div class="p-5 flex justify-between items-center bg-gray-900 border-b border-gray-800">
+                            <div class="flex-1 cursor-pointer flex items-center gap-3" onclick="this.parentElement.parentElement.classList.toggle('category-acc-active')">
+                                <h3 class="text-xl font-bold text-gray-100"><span class="text-blue-500">#</span> ${categoryName}</h3>
+                                <span class="text-sm text-gray-500 bg-gray-800 px-2 rounded-full">${groupPercent}% umiem</span>
+                            </div>
+                            <button onclick="startTest('${categoryName}')" class="bg-purple-600 hover:bg-purple-500 text-white px-6 py-1.5 rounded-full font-bold text-sm shadow-[0_0_15px_rgba(147,51,234,0.3)] mr-4">
+                                ▶ Ucz się tej grupy
+                            </button>
+                        </div>
+                        <div class="category-acc-content p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-950/50">
+                            ${cardsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function generateFlashcardHtml(card) {
+            // Kolor kropki zależnie od poziomu (0=szary, 1=czerwony, 2=żółty, 3=zielony)
+            const colors = ['bg-gray-600', 'bg-red-500', 'bg-yellow-500', 'bg-green-500'];
+            const profColor = colors[card.proficiency || 0];
+
+            return `
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-md relative flex flex-col group">
+                    <div class="flex justify-between items-start mb-2 gap-2">
+                        <div class="flex items-center gap-2 flex-1">
+                            <div class="w-3 h-3 rounded-full ${profColor} shadow-[0_0_5px_currentColor]" title="Poziom: ${card.proficiency||0}/3"></div>
+                            <h2 class="text-2xl font-bold text-blue-300 break-words">${card.english_word}</h2>
+                        </div>
+                        <div class="flex gap-3 items-center">
+                            <button onclick="openEditModal(${card.id})" class="text-gray-500 hover:text-blue-400">✏️</button>
+                            <button onclick="deleteCard(${card.id})" class="text-gray-500 hover:text-red-500 text-xs">usuń</button>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-lg text-green-400 font-semibold mb-2">${card.polish_translation}</p>
+                        <p class="text-sm text-gray-400 italic mb-4">"${card.definition}"</p>
+                    </div>
+                    <div class="bg-gray-900 p-3 rounded-lg text-sm border-l-4 border-yellow-500 mt-auto">
+                        ${card.mnemonic}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- LOGIKA TESTU (KARUZELI) ---
+        function startTest(categoryName) {
+            testQueue = allFlashcards.filter(c => c.category === categoryName);
+            // Sortujemy tak, żeby najpierw uczyć się tych słabych (proficiency bliskie 0)
+            testQueue.sort((a, b) => (a.proficiency || 0) - (b.proficiency || 0));
+            
+            if(testQueue.length === 0) return alert("Brak słówek w tej grupie!");
+            
+            currentTestIndex = 0;
+            document.getElementById('testModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Zablokuj scrollowanie pod spodem
+            renderTestCard();
+        }
+
+        function renderTestCard() {
+            isCardFlipped = false;
+            
+            const cardInner = document.getElementById('testCardInner');
+            
+            // MAGIA: Wyłączamy płynną animację na ułamek sekundy i odwracamy kartę natychmiast
+            cardInner.style.transition = 'none';
+            cardInner.classList.remove('rotate-y-180');
+            
+            document.getElementById('testControls').classList.replace('opacity-100', 'opacity-0');
+            document.getElementById('testControls').classList.replace('pointer-events-auto', 'pointer-events-none');
+
+            const card = testQueue[currentTestIndex];
+            document.getElementById('testCounter').innerText = `${currentTestIndex + 1} / ${testQueue.length}`;
+            
+            const frontWord = document.getElementById('testWord');
+            const backWord = document.getElementById('testTranslation');
+            const helperText = document.getElementById('frontHelperText');
+
+            if (testDirection === 'en-pl') {
+                helperText.innerText = "Jak to przetłumaczysz na polski?";
+                frontWord.innerText = card.english_word;
+                frontWord.className = "text-5xl font-bold text-blue-300 text-center break-words"; 
+                
+                backWord.innerText = card.polish_translation;
+                backWord.className = "text-4xl font-bold text-green-400 mb-2"; 
+            } else {
+                helperText.innerText = "Jak to jest po angielsku?";
+                frontWord.innerText = card.polish_translation;
+                frontWord.className = "text-5xl font-bold text-green-400 text-center break-words"; 
+                
+                backWord.innerText = card.english_word;
+                backWord.className = "text-4xl font-bold text-blue-300 mb-2"; 
+            }
+
+            document.getElementById('testDefinition').innerText = `"${card.definition}"`;
+            document.getElementById('testMnemonic').innerText = card.mnemonic;
+
+            // Przywracamy animację odwracania dla Twojego kliknięcia (z minimalnym opóźnieniem)
+            setTimeout(() => {
+                cardInner.style.transition = 'transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)';
+            }, 50);
+        }
+
+        function flipTestCard() {
+            if(isCardFlipped) return; // Obrócona raz, już zostaje
+            isCardFlipped = true;
+            document.getElementById('testCardInner').classList.add('rotate-y-180');
+            
+            // Pokaż guziki po obrocie
+            setTimeout(() => {
+                const controls = document.getElementById('testControls');
+                controls.classList.replace('opacity-0', 'opacity-100');
+                controls.classList.replace('pointer-events-none', 'pointer-events-auto');
+            }, 300);
+        }
+
+        async function rateCard(points) {
+            const card = testQueue[currentTestIndex];
+            // Obliczamy nowy poziom (maks 3)
+            let newProf = points === 1 ? 0 : Math.min(3, (card.proficiency || 0) + (points === 3 ? 2 : 1));
+            
+            // Wysyłamy PATCH do backendu (aktualizujemy tylko proficiency)
+            await fetch(`${API_URL}/flashcards/${card.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ proficiency: newProf })
+            });
+
+            // Aktualizacja w pamięci
+            const indexInAll = allFlashcards.findIndex(c => c.id === card.id);
+            if(indexInAll > -1) allFlashcards[indexInAll].proficiency = newProf;
+
+            nextTestCard();
+        }
+
+        function nextTestCard() {
+            currentTestIndex++;
+            if(currentTestIndex >= testQueue.length) {
+                closeTest();
+                loadFlashcards(); // Odśwież widok z nowymi paskami postępu
+                alert("Koniec powtórki na teraz! Dobra robota.");
+            } else {
+                renderTestCard();
+            }
+        }
+
+        function closeTest() {
+            document.getElementById('testModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            loadFlashcards();
+        }
+
+        // --- EDYCJA I DODAWANIE (Uproszczone dla dema) ---
+        function openEditModal(id) {
+            const card = allFlashcards.find(c => c.id === id);
+            document.getElementById('modalTitle').innerText = "Edytuj Fiszkę";
+            document.getElementById('editCardId').value = card.id;
+            
+            document.getElementById('wordInput').value = card.english_word;
+            document.getElementById('polishInput').value = card.polish_translation;
+            document.getElementById('mnemonicInput').value = card.mnemonic;
+            document.getElementById('categoryInputSingle').value = card.category;
+            
+            // Pokazujemy zaawansowane pola
+            document.getElementById('polishInput').classList.remove('hidden');
+            document.getElementById('mnemonicInput').classList.remove('hidden');
+            
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        async function saveCard() {
+            const id = document.getElementById('editCardId').value;
+            const word = document.getElementById('wordInput').value;
+            const polish = document.getElementById('polishInput').value;
+            const mnemonic = document.getElementById('mnemonicInput').value;
+            const cat = document.getElementById('categoryInputSingle').value || "Ogólne";
+
+            if(id) {
+                // To jest EDYCJA (PATCH)
+                await fetch(`${API_URL}/flashcards/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ english_word: word, polish_translation: polish, mnemonic: mnemonic, category: cat })
+                });
+            } else {
+                // To jest NOWE DODAWANIE (POST) - tu używamy Twojego endpointu AI
+                await fetch(`${API_URL}/users/${USER_ID}/flashcards/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ english_word: word, category: cat })
+                });
+            }
+            
+            document.getElementById('addModal').classList.add('hidden');
+            loadFlashcards();
+        }
+
+        async function deleteCard(id) {
+            if(confirm("Na pewno usunąć?")) {
+                await fetch(`${API_URL}/flashcards/${id}`, { method: 'DELETE' });
+                loadFlashcards();
+            }
+        }
+
+        async function handleOcrUpload() {
+            const fileInput = document.getElementById('ocrExpressInput');
+            const categoryInput = document.getElementById('categoryInputOcr');
+            const status = document.getElementById('ocrStatus');
+            const file = fileInput.files[0];
+            const category = categoryInput.value || "Skany";
+
+            if(!file) return;
+
+            document.getElementById('fileNameDisplay').innerText = `Wybrano: ${file.name}`;
+            status.innerText = "🚀 AI analizuje zdjęcie...";
+            status.className = "text-xs mt-2 text-center text-yellow-400";
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("category", category);
+
+            try {
+                const response = await fetch(`${API_URL}/users/${USER_ID}/ocr/`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if(response.ok) {
+                    const newCards = await response.json();
+                    status.innerText = `Sukces! AI dodało ${newCards.length} fiszek.`;
+                    status.className = "text-xs mt-2 text-center text-green-400";
+                    
+                    allFlashcards = [...newCards, ...allFlashcards];
+                    renderCategoryMenu();
+                    renderFlashcardsGrouped();
+                    updateGlobalStats(); // <-- Nowe odświeżanie statystyk
+                    
+                    setTimeout(() => {
+                        document.getElementById('addModal').classList.add('hidden');
+                        fileInput.value = '';
+                        document.getElementById('fileNameDisplay').innerText = "Wybierz zdjęcie / Otwórz aparat";
+                        status.innerText = '';
+                    }, 2000);
+                } else {
+                    const err = await response.json();
+                    status.innerText = `Błąd AI: ${err.detail}`;
+                    status.className = "text-xs mt-2 text-center text-red-500";
+                }
+            } catch (e) {
+                status.innerText = "Błąd połączenia z serwerem.";
+                status.className = "text-xs mt-2 text-center text-red-500";
+            }
+        }
+
+        loadFlashcards();
+    </script>
+</body>
+</html>
