@@ -11,7 +11,6 @@
         .rotate-icon { transition: transform 0.3s; }
         .category-acc-active .rotate-icon { transform: rotate(180deg); }
         
-        /* CSS DLA KARUZELI 3D */
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
         .backface-hidden { backface-visibility: hidden; }
@@ -133,25 +132,22 @@
         const USER_ID = 1;
         let allFlashcards = [];
         
-        // Zmienne do Testu
         let testQueue = [];
         let currentTestIndex = 0;
         let isCardFlipped = false;
-        let testDirection = 'en-pl'; // NOWA ZMIENNA: Domyślnie z angielskiego na polski
+        let testDirection = 'en-pl';
 
-        // NOWA FUNKCJA: Obsługa kliknięcia w przełącznik flag
         function toggleTestDirection() {
             testDirection = testDirection === 'en-pl' ? 'pl-en' : 'en-pl';
             const btn = document.getElementById('directionToggle');
             btn.innerText = testDirection === 'en-pl' ? '🇬🇧 ➔ 🇵🇱' : '🇵🇱 ➔ 🇬🇧';
             
-            // Jeśli karta była już odwrócona, robimy animację chowania i zmieniamy tekst
             if (isCardFlipped) {
                 document.getElementById('testCardInner').classList.remove('rotate-y-180');
                 document.getElementById('testControls').classList.replace('opacity-100', 'opacity-0');
                 document.getElementById('testControls').classList.replace('pointer-events-auto', 'pointer-events-none');
                 isCardFlipped = false;
-                setTimeout(renderTestCard, 300); // Czekamy aż się obróci
+                setTimeout(renderTestCard, 300);
             } else {
                 renderTestCard();
             }
@@ -168,7 +164,6 @@
 
         function updateGlobalStats() {
             if(allFlashcards.length === 0) return;
-            // Zakładamy, że proficiency = 3 to pełne opanowanie
             const totalPoints = allFlashcards.length * 3;
             const currentPoints = allFlashcards.reduce((sum, card) => sum + (card.proficiency || 0), 0);
             const percentage = Math.round((currentPoints / totalPoints) * 100);
@@ -211,7 +206,6 @@
                 let cardsHtml = '';
                 cards.forEach(card => cardsHtml += generateFlashcardHtml(card));
 
-                // Obliczanie statystyk grupy
                 const groupMax = cards.length * 3;
                 const groupPoints = cards.reduce((sum, c) => sum + (c.proficiency || 0), 0);
                 const groupPercent = groupMax === 0 ? 0 : Math.round((groupPoints / groupMax) * 100);
@@ -236,7 +230,6 @@
         }
 
         function generateFlashcardHtml(card) {
-            // Kolor kropki zależnie od poziomu (0=szary, 1=czerwony, 2=żółty, 3=zielony)
             const colors = ['bg-gray-600', 'bg-red-500', 'bg-yellow-500', 'bg-green-500'];
             const profColor = colors[card.proficiency || 0];
 
@@ -263,17 +256,15 @@
             `;
         }
 
-        // --- LOGIKA TESTU (KARUZELI) ---
         function startTest(categoryName) {
             testQueue = allFlashcards.filter(c => c.category === categoryName);
-            // Sortujemy tak, żeby najpierw uczyć się tych słabych (proficiency bliskie 0)
             testQueue.sort((a, b) => (a.proficiency || 0) - (b.proficiency || 0));
             
             if(testQueue.length === 0) return alert("Brak słówek w tej grupie!");
             
             currentTestIndex = 0;
             document.getElementById('testModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Zablokuj scrollowanie pod spodem
+            document.body.style.overflow = 'hidden';
             renderTestCard();
         }
 
@@ -282,7 +273,6 @@
             
             const cardInner = document.getElementById('testCardInner');
             
-            // MAGIA: Wyłączamy płynną animację na ułamek sekundy i odwracamy kartę natychmiast
             cardInner.style.transition = 'none';
             cardInner.classList.remove('rotate-y-180');
             
@@ -315,18 +305,16 @@
             document.getElementById('testDefinition').innerText = `"${card.definition}"`;
             document.getElementById('testMnemonic').innerText = card.mnemonic;
 
-            // Przywracamy animację odwracania dla Twojego kliknięcia (z minimalnym opóźnieniem)
             setTimeout(() => {
                 cardInner.style.transition = 'transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)';
             }, 50);
         }
 
         function flipTestCard() {
-            if(isCardFlipped) return; // Obrócona raz, już zostaje
+            if(isCardFlipped) return;
             isCardFlipped = true;
             document.getElementById('testCardInner').classList.add('rotate-y-180');
             
-            // Pokaż guziki po obrocie
             setTimeout(() => {
                 const controls = document.getElementById('testControls');
                 controls.classList.replace('opacity-0', 'opacity-100');
@@ -336,17 +324,14 @@
 
         async function rateCard(points) {
             const card = testQueue[currentTestIndex];
-            // Obliczamy nowy poziom (maks 3)
             let newProf = points === 1 ? 0 : Math.min(3, (card.proficiency || 0) + (points === 3 ? 2 : 1));
             
-            // Wysyłamy PATCH do backendu (aktualizujemy tylko proficiency)
             await fetch(`${API_URL}/flashcards/${card.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ proficiency: newProf })
             });
 
-            // Aktualizacja w pamięci
             const indexInAll = allFlashcards.findIndex(c => c.id === card.id);
             if(indexInAll > -1) allFlashcards[indexInAll].proficiency = newProf;
 
@@ -357,7 +342,7 @@
             currentTestIndex++;
             if(currentTestIndex >= testQueue.length) {
                 closeTest();
-                loadFlashcards(); // Odśwież widok z nowymi paskami postępu
+                loadFlashcards();
                 alert("Koniec powtórki na teraz! Dobra robota.");
             } else {
                 renderTestCard();
@@ -370,7 +355,6 @@
             loadFlashcards();
         }
 
-        // --- EDYCJA I DODAWANIE (Uproszczone dla dema) ---
         function openEditModal(id) {
             const card = allFlashcards.find(c => c.id === id);
             document.getElementById('modalTitle').innerText = "Edytuj Fiszkę";
@@ -381,7 +365,6 @@
             document.getElementById('mnemonicInput').value = card.mnemonic;
             document.getElementById('categoryInputSingle').value = card.category;
             
-            // Pokazujemy zaawansowane pola
             document.getElementById('polishInput').classList.remove('hidden');
             document.getElementById('mnemonicInput').classList.remove('hidden');
             
@@ -396,14 +379,12 @@
             const cat = document.getElementById('categoryInputSingle').value || "Ogólne";
 
             if(id) {
-                // To jest EDYCJA (PATCH)
                 await fetch(`${API_URL}/flashcards/${id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ english_word: word, polish_translation: polish, mnemonic: mnemonic, category: cat })
                 });
             } else {
-                // To jest NOWE DODAWANIE (POST) - tu używamy Twojego endpointu AI
                 await fetch(`${API_URL}/users/${USER_ID}/flashcards/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -453,7 +434,7 @@
                     allFlashcards = [...newCards, ...allFlashcards];
                     renderCategoryMenu();
                     renderFlashcardsGrouped();
-                    updateGlobalStats(); // <-- Nowe odświeżanie statystyk
+                    updateGlobalStats();
                     
                     setTimeout(() => {
                         document.getElementById('addModal').classList.add('hidden');
