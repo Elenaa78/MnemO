@@ -4,22 +4,23 @@ An intelligent vocabulary learning assistant that automates the process of addin
 
 This project was developed to solve the tedious problem of manual flashcard creation. From a technical perspective, it demonstrates a scalable Python architecture, asynchronous task processing (data pipelines), and seamless integration with external AI services and CLI tools.
 
+<img width="2524" height="1265" alt="image" src="https://github.com/user-attachments/assets/384115c2-e1ae-430d-a339-b10383490644" />
+
+
 ## 🚀 Core Features
 
 *   **Optical Character Recognition (OCR):** Extracts raw text from images (e.g., screenshots, book pages) using the Tesseract engine.
 *   **AI Mnemonic Generator:** Integrates with Large Language Models (OpenAI API) to automatically generate translations, definitions, and personalized memory associations.
-*   **Spaced Repetition System (SRS):** Features a custom repetition engine based on the SuperMemo-2 algorithm, optimizing learning intervals (the forgetting curve) for each individual word.
-*   **Asynchronous Background Processing:** Long-running operations (image analysis, external API requests) are offloaded to Celery task queues, ensuring high responsiveness of the main API.
-*   **User Management:** A complete authentication and authorization system based on JWT tokens.
+*   **Spaced Repetition System (SRS):** Features a repetition engine for optimizing learning intervals for each individual word.
+*   **User Management:** Authentication and authorization system.
 
 ## 🛠️ Tech Stack
 
 *   **Language:** Python 3.10+
 *   **API Framework:** FastAPI
-*   **Database:** PostgreSQL + SQLAlchemy (ORM) + Alembic (Migrations)
-*   **Task Queue:** Celery + Redis (Message Broker)
+*   **Database:** SQLite + SQLAlchemy (ORM)
+*   **Frontend:** HTML, CSS, JavaScript 
 *   **Integrations:** Tesseract OCR, OpenAI API
-*   **Infrastructure:** Docker & Docker Compose
 
 ## ⚙️ How to run the project locally
 
@@ -30,22 +31,27 @@ This project uses Docker Compose for easy setup of the API, Database, Redis, and
   git clone https://github.com/Elenaa78/MnemO
   cd MnemO
 ```
-2. **Environment Variables:**
-Create a .env file in the root directory based on the provided template and add your API keys:
+2. **Set up virtual environment & install dependencies:**
+```
+  python -m venv venv
+  source venv/bin/activate  # On Windows use: venv\Scripts\activate
+  pip install -r requirements.txt
+```
+
+3. **Environment Variables:**
+Create a .env file in the root directory and add your OpenAI API key:
 ```
   OPENAI_API_KEY=your_openai_api_key_here
-  DATABASE_URL=postgresql://user:password@db:5432/mnemo_db
 ```
 
-3. **Build and start the containers:**
+4. **Run the Backend (FastAPI):**
 ```
-  docker-compose up --build
+  uvicorn main:app --reload
 ```
-4. **Run database migrations (Alembic):**
-```
-  docker-compose exec api alembic upgrade head
-```
+
+5. **Run the Frontend:**
+   Simply open the index.html file in your web browser (or use an extension like Live Server in VS Code).
 
 ## 📚 API Documentation
-Once the containers are running, the interactive API documentation (Swagger UI) is automatically available at:
+Once the backend is running, the interactive API documentation (Swagger UI) is automatically available at:
 http://127.0.0.1:8000/docs
