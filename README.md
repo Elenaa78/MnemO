@@ -1,22 +1,51 @@
 # 🧠 MnemO Backend API
 
-Inteligentny asystent nauki słówek, który automatyzuje proces dodawania i zapamiętywania nowego słownictwa. Zamiast ręcznie wpisywać fiszki, użytkownik przesyła zdjęcie strony z podręcznika, a system samodzielnie wyciąga angielskie słowa, tłumaczy je i tworzy kreatywne skojarzenia (mnemotechniki) ułatwiające zapamiętywanie.
+An intelligent vocabulary learning assistant that automates the process of adding and memorizing new words. Instead of manually creating flashcards, users can upload an image of a textbook page. The system automatically extracts English words, translates them, and generates creative memory associations (mnemonics) to aid retention.
 
-Projekt został stworzony, aby rozwiązać realny problem żmudnego tworzenia fiszek. Od strony technicznej ma na celu demonstrację skalowalnej architektury w Pythonie, asynchronicznego przetwarzania zadań (data pipelines) oraz integracji z zewnętrznymi usługami AI i narzędziami CLI.
+This project was developed to solve the tedious problem of manual flashcard creation. From a technical perspective, it demonstrates a scalable Python architecture, asynchronous task processing (data pipelines), and seamless integration with external AI services and CLI tools.
 
-## 🚀 Główne funkcjonalności
+## 🚀 Core Features
 
-* **Optyczne Rozpoznawanie Znaków (OCR):** Ekstrakcja surowego tekstu ze zdjęć (np. zrzutów ekranu, zdjęć książek) przy użyciu silnika Tesseract.
-* **AI Mnemonic Generator:** Integracja z modelem językowym (OpenAI API) do automatycznego generowania tłumaczeń, definicji i spersonalizowanych skojarzeń pamięciowych.
-* **Spaced Repetition System (SRS):** Autorski silnik powtórek bazujący na algorytmie SuperMemo-2, optymalizujący interwały nauki (krzywą zapominania) dla każdego słówka indywidualnie.
-* **Asynchroniczne przetwarzanie w tle:** Długotrwałe operacje (analiza obrazu, zapytania do zewnętrznych API) są oddelegowane do kolejek Celery, co gwarantuje wysoką responsywność głównego API.
-* **Zarządzanie użytkownikami:** Kompletny system autoryzacji i autentykacji bazujący na tokenach JWT.
+*   **Optical Character Recognition (OCR):** Extracts raw text from images (e.g., screenshots, book pages) using the Tesseract engine.
+*   **AI Mnemonic Generator:** Integrates with Large Language Models (OpenAI API) to automatically generate translations, definitions, and personalized memory associations.
+*   **Spaced Repetition System (SRS):** Features a custom repetition engine based on the SuperMemo-2 algorithm, optimizing learning intervals (the forgetting curve) for each individual word.
+*   **Asynchronous Background Processing:** Long-running operations (image analysis, external API requests) are offloaded to Celery task queues, ensuring high responsiveness of the main API.
+*   **User Management:** A complete authentication and authorization system based on JWT tokens.
 
-## 🛠️ Stack Technologiczny
+## 🛠️ Tech Stack
 
-* **Język:** Python 3.10+
-* **Framework API:** FastAPI
-* **Baza Danych:** PostgreSQL + SQLAlchemy (ORM) + Alembic (Migracje)
-* **Kolejkowanie Zadań:** Celery + Redis (Message Broker)
-* **Integracje:** Tesseract OCR, OpenAI API
-* **Infrastruktura:** Docker & Docker Compose
+*   **Language:** Python 3.10+
+*   **API Framework:** FastAPI
+*   **Database:** PostgreSQL + SQLAlchemy (ORM) + Alembic (Migrations)
+*   **Task Queue:** Celery + Redis (Message Broker)
+*   **Integrations:** Tesseract OCR, OpenAI API
+*   **Infrastructure:** Docker & Docker Compose
+
+## ⚙️ How to run the project locally
+
+This project uses Docker Compose for easy setup of the API, Database, Redis, and Celery workers.
+
+1. **Clone the repository:**
+```
+  git clone https://github.com/Elenaa78/MnemO
+  cd MnemO
+```
+2. **Environment Variables:**
+Create a .env file in the root directory based on the provided template and add your API keys:
+```
+  OPENAI_API_KEY=your_openai_api_key_here
+  DATABASE_URL=postgresql://user:password@db:5432/mnemo_db
+```
+
+3. **Build and start the containers:**
+```
+  docker-compose up --build
+```
+4. **Run database migrations (Alembic):**
+```
+  docker-compose exec api alembic upgrade head
+```
+
+## 📚 API Documentation
+Once the containers are running, the interactive API documentation (Swagger UI) is automatically available at:
+http://127.0.0.1:8000/docs
